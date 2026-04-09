@@ -38,7 +38,7 @@ char* linked_list_pop(LinkedList* list) {
     if(list->head == NULL) return NULL; // Empty list
 
     if(list->head->next == NULL) {
-        char* data = list->head->next->data;
+        char* data = list->head->data;
         free(list->head);
         list->head = NULL;
         list->size--;

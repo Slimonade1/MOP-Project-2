@@ -16,35 +16,72 @@ char* deckOfCards[] = {
 #define NUM_CARDS 52
 
 // Prototypes
-void test_linked_list();
+void drawToTerminal(LinkedList* columns);
+void populateColumns(LinkedList* columns);
+char *get_card_at(LinkedList *list, int index);
+
 
 int main() {
-    test_linked_list();
+    LinkedList columns[NUM_COLUMNS];
+    
+    populateColumns(columns);
+    drawToTerminal(columns);
+
     return 0;
 }
 
-void test_linked_list() {
-    // Array of 7 linked lists (one for each column)
-    LinkedList columns[NUM_COLUMNS];
+/**
+ * Draws the GUI of the game to the console
+ */
+void drawToTerminal(LinkedList* columns) {
+    // Print column headers
+    printf("c1\tc2\tc3\tc4\tc5\tc6\tc7\n");
+    printf("\n");
 
+    int maxRows = 0;
+    for(int i = 0; i < NUM_COLUMNS; i++) {
+        if(columns[i].size > maxRows) {
+            maxRows = columns[i].size;
+        }
+    }
+
+    // print the cards row by row
+    for(int row = 0; row < maxRows; row++) {
+        for(int col = 0; col < NUM_COLUMNS; col++) {
+            char *card = get_card_at(&columns[col], row);
+            printf("%-3s\t", card ? card : "");
+        }
+        printf("\n");
+    }
+}
+
+/**
+ * Helper function to get card at specific index
+ */
+char *get_card_at(LinkedList *list, int index) {
+    Node *cur = list->head;
+    int i = 0;
+    while(cur && i < index) {
+        cur = cur->next;
+        i++;
+    }
+    return cur ? cur->data : NULL;
+}
+
+/**
+ * Initialize coloumns and populate with cards
+ */
+void populateColumns(LinkedList* columns) {
     // Initialize all columns
     for(int i = 0; i < NUM_COLUMNS; i++) {
         linked_list_init(&columns[i]);
     }
 
-    // Populate the columns with cards for testing purposes
+    // Fill each column with a card
     for(int i = 0; i < NUM_CARDS; i++) {
         linked_list_push(&columns[i % NUM_COLUMNS], deckOfCards[i]);
     }
-
-    // Print the columns to verify they are populated correctly
-    for(int i = 0; i < NUM_COLUMNS; i++) {
-        printf("Column %d:\n", i + 1);
-        linked_list_print(&columns[i]);
-        printf("\n");
-    }
 }
-
 
 
 
