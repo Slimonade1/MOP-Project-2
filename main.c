@@ -23,7 +23,7 @@ char *get_card_at(LinkedList *list, int index);
 
 int main() {
     LinkedList columns[NUM_COLUMNS];
-    
+
     populateColumns(columns);
     drawToTerminal(columns);
 
@@ -34,7 +34,7 @@ int main() {
  * Draws the GUI of the game to the console
  */
 void drawToTerminal(LinkedList* columns) {
-    // Print column headers
+    // Column headers
     printf("c1\tc2\tc3\tc4\tc5\tc6\tc7\n");
     printf("\n");
 
@@ -49,7 +49,7 @@ void drawToTerminal(LinkedList* columns) {
     for(int row = 0; row < maxRows; row++) {
         for(int col = 0; col < NUM_COLUMNS; col++) {
             char *card = get_card_at(&columns[col], row);
-            printf("%-3s\t", card ? card : "");
+            printf("%-2s\t", card ? card : "");
         }
         printf("\n");
     }
@@ -59,13 +59,13 @@ void drawToTerminal(LinkedList* columns) {
  * Helper function to get card at specific index
  */
 char *get_card_at(LinkedList *list, int index) {
-    Node *cur = list->head;
+    Node *current = list->head;
     int i = 0;
-    while(cur && i < index) {
-        cur = cur->next;
+    while(current && i < index) {
+        current = current->next;
         i++;
     }
-    return cur ? cur->data : NULL;
+    return current ? current->data : NULL;
 }
 
 /**
