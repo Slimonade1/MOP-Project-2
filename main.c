@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "linked_list.h"
+#include "card.h"
 
 char* deckOfCards[] = {
     "AH", "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "TH", "JH", "QH", "KH", // Hearts
@@ -11,9 +12,15 @@ char* deckOfCards[] = {
     "AS", "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "TS", "JS", "QS", "KS"  // Spades
 };
 
-int main() {
-    printf("Welcome to Yukon Solitaire!\n");
+// Prototypes
+void test_linked_list();
 
+int main() {
+    test_linked_list();
+    return 0;
+}
+
+void test_linked_list(){
     LinkedList list;
     linked_list_init(&list);
     
@@ -29,9 +36,9 @@ int main() {
 
     linked_list_pop(&list);
     linked_list_print(&list);
-
-    return 0;
 }
+
+
 
 
 

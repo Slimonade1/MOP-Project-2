@@ -2,13 +2,17 @@
 #include <stdio.h>
 #include <string.h>
 
-// Initialize the linked list
+/**
+ * Initializes the linked list
+ */
 void linked_list_init(LinkedList* list) {
     list->head = NULL;
     list->size = 0;
 }
 
-// Append a new node to the end of the list
+/**
+ * Append a new node to the end of the list
+ */
 void linked_list_push(LinkedList* list, char* data) {
     Node* new_node = malloc(sizeof(Node));
     if(!new_node) return; // handle allocation failure
@@ -27,7 +31,9 @@ void linked_list_push(LinkedList* list, char* data) {
     list->size++;
 }
 
-// Remove and return the tail node
+/**
+ *  Remove and return the tail node
+ */ 
 char* linked_list_pop(LinkedList* list) {
     if(list->head == NULL) return NULL; // Empty list
 
@@ -52,7 +58,9 @@ char* linked_list_pop(LinkedList* list) {
     return data;
 }
 
-// Print the linked list
+/**
+ * Print the contents of the linked list
+ */
 void linked_list_print(LinkedList* list) {
     Node* current = list->head;
     while(current != NULL){
