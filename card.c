@@ -5,7 +5,7 @@
 
 void card_init(Card* card, char* data, bool* shown){
     card->data = data;
-    card->shown = shown;
+    card->shown = true;
 }
 
 void card_change_visibility(Card* card){

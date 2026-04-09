@@ -12,6 +12,9 @@ char* deckOfCards[] = {
     "AS", "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "TS", "JS", "QS", "KS"  // Spades
 };
 
+#define NUM_COLUMNS 7
+#define NUM_CARDS 52
+
 // Prototypes
 void test_linked_list();
 
@@ -20,22 +23,26 @@ int main() {
     return 0;
 }
 
-void test_linked_list(){
-    LinkedList list;
-    linked_list_init(&list);
-    
-    linked_list_push(&list, deckOfCards[0]);
-    linked_list_push(&list, deckOfCards[1]);
-    linked_list_push(&list, deckOfCards[2]);
-    linked_list_push(&list, deckOfCards[3]);
-    linked_list_push(&list, deckOfCards[4]);
-    linked_list_print(&list);
+void test_linked_list() {
+    // Array of 7 linked lists (one for each column)
+    LinkedList columns[NUM_COLUMNS];
 
-    linked_list_pop(&list);
-    linked_list_print(&list);
+    // Initialize all columns
+    for(int i = 0; i < NUM_COLUMNS; i++) {
+        linked_list_init(&columns[i]);
+    }
 
-    linked_list_pop(&list);
-    linked_list_print(&list);
+    // Populate the columns with cards for testing purposes
+    for(int i = 0; i < NUM_CARDS; i++) {
+        linked_list_push(&columns[i % NUM_COLUMNS], deckOfCards[i]);
+    }
+
+    // Print the columns to verify they are populated correctly
+    for(int i = 0; i < NUM_COLUMNS; i++) {
+        printf("Column %d:\n", i + 1);
+        linked_list_print(&columns[i]);
+        printf("\n");
+    }
 }
 
 

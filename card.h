@@ -2,6 +2,7 @@
 #define CARD_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 // Card structure
 typedef struct Card {
