@@ -2,32 +2,118 @@
 // This project is an implementation of the simple game Yukon Solitaire!
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "linked_list.h"
 #include "card.h"
-
-char* deckOfCards[] = {
-    "AH", "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "TH", "JH", "QH", "KH", // Hearts
-    "AD", "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "TD", "JD", "QD", "KD", // Diamonds
-    "AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "TC", "JC", "QC", "KC", // Clubs
-    "AS", "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "TS", "JS", "QS", "KS"  // Spades
-};
 
 #define NUM_COLUMNS 7
 #define NUM_CARDS 52
 
 // Prototypes
+
+int loadFile(char* deckOfCards[], char* fileName);
 void drawToTerminal(LinkedList* columns);
-void populateColumns(LinkedList* columns);
+void populateColumnsWithCards(LinkedList* columns, char* deckOfCards[]);
+void populateColumnsWithBlanks(LinkedList* columns);
 char *get_card_at(LinkedList *list, int index);
+static void trim_newline(char *line);
+static int is_valid_card(const char *card);
+static void free_deck(char* deckOfCards[], int count);
 
 
 int main() {
     LinkedList columns[NUM_COLUMNS];
-
-    populateColumns(columns);
+    char* deckOfCards[NUM_CARDS] = { NULL };
+    populateColumnsWithBlanks(columns);
     drawToTerminal(columns);
 
+    // TODO Create a proper input reader that reads commands and executes, if they are valid
+
+    char input[100];
+    printf("INPUT >");
+    scanf("%s", input);
+
+    if(strcmp(input, "LD") == 0) {
+        populateColumnsWithCards(columns, deckOfCards);
+        int loaded = loadFile(deckOfCards, "std_card_deck.txt");
+    } else {
+        int loaded = loadFile(deckOfCards, input);
+        if (loaded != NUM_CARDS) {
+            fprintf(stderr, "Failed to load full deck: loaded %d of %d cards\n", loaded, NUM_CARDS);
+            free_deck(deckOfCards, loaded);
+            return 1;
+        }
+    }
+
+    populateColumnsWithCards(columns, deckOfCards);
+    drawToTerminal(columns);
+
+    free_deck(deckOfCards, NUM_CARDS);
     return 0;
+}
+
+/**
+ * Loads the deck of cards from the file "card_deck.txt" and saves
+ * each valid card string into deckOfCards[].
+ * Returns the number of cards successfully loaded.
+ */
+int loadFile(char* deckOfCards[], char* fileName){
+    FILE *file = fopen(fileName, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return 0;
+    }
+
+    char buffer[256];
+    int index = 0;
+    while (index < NUM_CARDS && fgets(buffer, sizeof(buffer), file) != NULL) {
+        trim_newline(buffer);
+        if (buffer[0] == '\0') {
+            continue; // skip empty lines
+        }
+
+        if (!is_valid_card(buffer)) {
+            fprintf(stderr, "%s is NOT a valid card\n", buffer);
+            return 0;
+        }
+
+        size_t len = strlen(buffer);
+        deckOfCards[index] = malloc(len + 1);
+        if (deckOfCards[index] == NULL) {
+            perror("Memory allocation failed");
+            break;
+        }
+        strcpy(deckOfCards[index], buffer);
+        index++;
+    }
+
+    fclose(file);
+    return index;
+}
+
+static void trim_newline(char *line) {
+    size_t len = strlen(line);
+    while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
+        line[--len] = '\0';
+    }
+}
+
+static int is_valid_card(const char *card) {
+    // Checks if length of cards is 2
+    if (card == NULL || card[0] == '\0' || card[1] == '\0' || card[2] != '\0') {
+        return 0;
+    }
+
+    const char *valid_ranks = "A23456789TJQK";
+    const char *valid_suits = "HDCS";
+    return strchr(valid_ranks, card[0]) != NULL && strchr(valid_suits, card[1]) != NULL;
+}
+
+static void free_deck(char* deckOfCards[], int count) {
+    for (int i = 0; i < count; i++) {
+        free(deckOfCards[i]);
+    }
 }
 
 /**
@@ -71,7 +157,7 @@ char *get_card_at(LinkedList *list, int index) {
 /**
  * Initialize coloumns and populate with cards
  */
-void populateColumns(LinkedList* columns) {
+void populateColumnsWithCards(LinkedList* columns, char* deckOfCards[]) {
     // Initialize all columns
     for(int i = 0; i < NUM_COLUMNS; i++) {
         linked_list_init(&columns[i]);
@@ -80,6 +166,21 @@ void populateColumns(LinkedList* columns) {
     // Fill each column with a card
     for(int i = 0; i < NUM_CARDS; i++) {
         linked_list_push(&columns[i % NUM_COLUMNS], deckOfCards[i]);
+    }
+}
+
+/**
+ * Initialize coloumns and populate with hidden cards
+ */
+void populateColumnsWithBlanks(LinkedList* columns) {
+    // Initialize all columns
+    for(int i = 0; i < NUM_COLUMNS; i++) {
+        linked_list_init(&columns[i]);
+    }
+
+    // Fill each column with a card
+    for(int i = 0; i < NUM_CARDS; i++) {
+        linked_list_push(&columns[i % NUM_COLUMNS], "[]");
     }
 }
 
