@@ -10,4 +10,8 @@ typedef struct Card {
     bool shown;
 } Card;
 
+// Function prototypes
+void card_init(Card* card, char* data, bool shown);
+void card_change_visibility(Card* card);
+
 #endif // CARD_H

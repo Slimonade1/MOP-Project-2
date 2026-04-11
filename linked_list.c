@@ -1,4 +1,5 @@
 #include "linked_list.h"
+#include "card.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -13,7 +14,7 @@ void linked_list_init(LinkedList* list) {
 /**
  * Append a new node to the end of the list
  */
-void linked_list_push(LinkedList* list, char* data) {
+void linked_list_push(LinkedList* list, void* data) {
     Node* new_node = malloc(sizeof(Node));
     if(!new_node) return; // handle allocation failure
     new_node->data = data;
@@ -34,11 +35,11 @@ void linked_list_push(LinkedList* list, char* data) {
 /**
  *  Remove and return the tail node
  */ 
-char* linked_list_pop(LinkedList* list) {
+void* linked_list_pop(LinkedList* list) {
     if(list->head == NULL) return NULL; // Empty list
 
     if(list->head->next == NULL) {
-        char* data = list->head->data;
+        void* data = list->head->data;
         free(list->head);
         list->head = NULL;
         list->size--;
@@ -51,7 +52,7 @@ char* linked_list_pop(LinkedList* list) {
     }
 
     Node* tail = current->next;
-    char* data = tail->data;
+    void* data = tail->data;
     current->next = NULL;
     free(tail);
     list->size--;
@@ -64,7 +65,8 @@ char* linked_list_pop(LinkedList* list) {
 void linked_list_print(LinkedList* list) {
     Node* current = list->head;
     while(current != NULL){
-        printf("%s -> ", current->data);
+        Card* card = (Card*)current->data;
+        printf("%s -> ", card ? card->data : "NULL");
         current = current->next;
     }
     printf("\n");

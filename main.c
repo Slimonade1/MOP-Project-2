@@ -12,19 +12,20 @@
 
 // Prototypes
 
-int loadFile(char* deckOfCards[], char* fileName);
+int loadFile(Card* deckOfCards[], char* fileName);
 void drawToTerminal(LinkedList* columns);
-void populateColumnsWithCards(LinkedList* columns, char* deckOfCards[]);
+void populateColumnsWithCards(LinkedList* columns, Card* deckOfCards[]);
 void populateColumnsWithBlanks(LinkedList* columns);
-char *get_card_at(LinkedList *list, int index);
+Card *get_card_at(LinkedList *list, int index);
 static void trim_newline(char *line);
 static int is_valid_card(const char *card);
-static void free_deck(char* deckOfCards[], int count);
-
+static void free_deck(Card* deckOfCards[], int count);
+void card_init(Card* card, char* data, bool visible);  // Add this
 
 int main() {
     LinkedList columns[NUM_COLUMNS];
-    char* deckOfCards[NUM_CARDS] = { NULL };
+    Card* deckOfCards[NUM_CARDS] = { NULL };
+
     populateColumnsWithBlanks(columns);
     drawToTerminal(columns);
 
@@ -34,9 +35,14 @@ int main() {
     printf("INPUT >");
     scanf("%s", input);
 
+    // this is a stupid way of doing this
     if(strcmp(input, "LD") == 0) {
-        populateColumnsWithCards(columns, deckOfCards);
         int loaded = loadFile(deckOfCards, "std_card_deck.txt");
+        if (loaded != NUM_CARDS) {
+            fprintf(stderr, "Failed to load full deck: loaded %d of %d cards\n", loaded, NUM_CARDS);
+            free_deck(deckOfCards, loaded);
+            return 1;
+        }
     } else {
         int loaded = loadFile(deckOfCards, input);
         if (loaded != NUM_CARDS) {
@@ -49,7 +55,10 @@ int main() {
     populateColumnsWithCards(columns, deckOfCards);
     drawToTerminal(columns);
 
-    free_deck(deckOfCards, NUM_CARDS);
+    card_change_visibility(deckOfCards[10]);
+    drawToTerminal(columns);
+
+    //free_deck(deckOfCards, NUM_CARDS);
     return 0;
 }
 
@@ -58,7 +67,7 @@ int main() {
  * each valid card string into deckOfCards[].
  * Returns the number of cards successfully loaded.
  */
-int loadFile(char* deckOfCards[], char* fileName){
+int loadFile(Card* deckOfCards[], char* fileName){
     FILE *file = fopen(fileName, "r");
     if (file == NULL) {
         perror("Error opening file");
@@ -78,13 +87,14 @@ int loadFile(char* deckOfCards[], char* fileName){
             return 0;
         }
 
-        size_t len = strlen(buffer);
-        deckOfCards[index] = malloc(len + 1);
-        if (deckOfCards[index] == NULL) {
+        Card* newCard = malloc(sizeof(Card));
+        if (newCard == NULL) {
             perror("Memory allocation failed");
             break;
         }
-        strcpy(deckOfCards[index], buffer);
+        card_init(newCard, buffer, true);
+        deckOfCards[index] = newCard;
+
         index++;
     }
 
@@ -110,9 +120,12 @@ static int is_valid_card(const char *card) {
     return strchr(valid_ranks, card[0]) != NULL && strchr(valid_suits, card[1]) != NULL;
 }
 
-static void free_deck(char* deckOfCards[], int count) {
+static void free_deck(Card* deckOfCards[], int count) {
     for (int i = 0; i < count; i++) {
-        free(deckOfCards[i]);
+        if (deckOfCards[i]) {
+            free(deckOfCards[i]->data);
+            free(deckOfCards[i]);
+        }
     }
 }
 
@@ -134,8 +147,9 @@ void drawToTerminal(LinkedList* columns) {
     // print the cards row by row
     for(int row = 0; row < maxRows; row++) {
         for(int col = 0; col < NUM_COLUMNS; col++) {
-            char *card = get_card_at(&columns[col], row);
-            printf("%-2s\t", card ? card : "");
+            Card *card = get_card_at(&columns[col], row);
+            char *display = card ? (card->shown ? card->data : "[]") : "";
+            printf("%-2s\t", display);
         }
         printf("\n");
     }
@@ -144,20 +158,21 @@ void drawToTerminal(LinkedList* columns) {
 /**
  * Helper function to get card at specific index
  */
-char *get_card_at(LinkedList *list, int index) {
+Card *get_card_at(LinkedList *list, int index) {
     Node *current = list->head;
     int i = 0;
     while(current && i < index) {
         current = current->next;
         i++;
     }
-    return current ? current->data : NULL;
+
+    return current ? (Card *)current->data : NULL;
 }
 
 /**
  * Initialize coloumns and populate with cards
  */
-void populateColumnsWithCards(LinkedList* columns, char* deckOfCards[]) {
+void populateColumnsWithCards(LinkedList* columns, Card* deckOfCards[]) {
     // Initialize all columns
     for(int i = 0; i < NUM_COLUMNS; i++) {
         linked_list_init(&columns[i]);
@@ -165,7 +180,7 @@ void populateColumnsWithCards(LinkedList* columns, char* deckOfCards[]) {
 
     // Fill each column with a card
     for(int i = 0; i < NUM_CARDS; i++) {
-        linked_list_push(&columns[i % NUM_COLUMNS], deckOfCards[i]);
+        linked_list_push(&columns[i % NUM_COLUMNS], (void *)deckOfCards[i]);
     }
 }
 
@@ -179,8 +194,14 @@ void populateColumnsWithBlanks(LinkedList* columns) {
     }
 
     // Fill each column with a card
+    Card* blankCard = malloc(sizeof(Card));
+    if (blankCard == NULL) {
+        perror("Memory allocation failed");
+        return;
+    }
+    card_init(blankCard, "", false);
     for(int i = 0; i < NUM_CARDS; i++) {
-        linked_list_push(&columns[i % NUM_COLUMNS], "[]");
+        linked_list_push(&columns[i % NUM_COLUMNS], blankCard);
     }
 }
 
