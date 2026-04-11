@@ -22,6 +22,7 @@ static int is_valid_card(const char *card);
 static void free_deck(Card* deckOfCards[], int count);
 void card_init(Card* card, char* data, bool visible);  // Add this
 
+
 int main() {
     LinkedList columns[NUM_COLUMNS];
     Card* deckOfCards[NUM_CARDS] = { NULL };
@@ -53,9 +54,6 @@ int main() {
     }
 
     populateColumnsWithCards(columns, deckOfCards);
-    drawToTerminal(columns);
-
-    card_change_visibility(deckOfCards[10]);
     drawToTerminal(columns);
 
     //free_deck(deckOfCards, NUM_CARDS);
