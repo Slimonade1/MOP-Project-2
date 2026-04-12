@@ -20,6 +20,6 @@ typedef struct {
 void linked_list_init(LinkedList* list);
 void linked_list_push(LinkedList* list, void* data);
 void* linked_list_pop(LinkedList* list);
-void linked_list_print(LinkedList* list);
+void* get_tail_card(LinkedList *list);
 
 #endif // LINKED_LIST_H

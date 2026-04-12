@@ -60,15 +60,15 @@ void* linked_list_pop(LinkedList* list) {
 }
 
 /**
- * Print the contents of the linked list
+ * Return the data of the tail node without removing it
  */
-void linked_list_print(LinkedList* list) {
+void* get_tail_card(LinkedList *list) {
+    if (list->head == NULL) return NULL; // Empty list
+
     Node* current = list->head;
-    while(current != NULL){
-        Card* card = (Card*)current->data;
-        printf("%s -> ", card ? card->data : "NULL");
+    while (current->next != NULL) {
         current = current->next;
     }
-    printf("\n");
+    return current->data;
 }
 
