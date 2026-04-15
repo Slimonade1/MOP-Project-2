@@ -1,4 +1,5 @@
 #include "deck_loader.h"
+#include "linked_list.h"
 #include "card.h"
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +11,7 @@
  * each valid card string into deckOfCards[].
  * Returns the number of cards successfully loaded.
  */
-int loadFile(Card* deckOfCards[], char* fileName){
+int loadFile(LinkedList *deckOfCards, char* fileName){
     FILE *file = NULL;
 
     // If no filename is provided, use the default deck file
@@ -40,7 +41,7 @@ int loadFile(Card* deckOfCards[], char* fileName){
             break;
         }
         card_init(newCard, buffer, false);
-        deckOfCards[index] = newCard;
+        linked_list_push(deckOfCards, newCard);
 
         index++;
     }

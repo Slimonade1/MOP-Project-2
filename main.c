@@ -14,18 +14,17 @@
 
 // Prototypes
 
-int commandReader(Card* deckOfCards[], LinkedList* columns);
-void showAllCards(Card *deckOfCards[]);
-void shuffleSplit(Card *deckOfCards[], int indexOfSplit);
-void shuffleRandom(Card* deckOfCards[]);
+int commandReader(LinkedList *deckOfCards);
+void showAllCards(LinkedList *deckOfCards);
+void shuffleSplit(LinkedList *deckOfCards, int split);
+void shuffleRandom(LinkedList *deckOfCards);
 
 void drawToTerminal(LinkedList* columns, LinkedList* finishCells);
 Card *get_card_at(LinkedList *list, int index);
 
 void initializeColumns(LinkedList* columns, LinkedList* finishCells);
-void updateColumns(LinkedList* columns, Card* deckOfCards[]);
-
-static void free_deck(Card* deckOfCards[], int count);
+void updateColumns(LinkedList *deck, LinkedList *columns);
+void freeDeck(LinkedList *deckOfCards);
 
 // Global variables
 char statusMessage[50];
@@ -35,7 +34,8 @@ LinkedList columns[NUM_COLUMNS];
 LinkedList finishCells[4];
 
 int main() {
-    Card* deckOfCards[NUM_CARDS] = { NULL };
+    LinkedList deckOfCards;
+    linked_list_init(&deckOfCards);
     srand((unsigned)time(NULL)); // create new seed
 
     // Empty grid start of game
@@ -44,11 +44,9 @@ int main() {
 
     while(true) { // TEMP ALWAYS TRUE, switch with command "QQ"
         strcpy(statusMessage, "OK");
-        commandReader(deckOfCards, columns);
+        commandReader(&deckOfCards);
         drawToTerminal(columns, finishCells);
     }
-
-    free_deck(deckOfCards, NUM_CARDS);
     return 0;
 }
 
@@ -57,7 +55,7 @@ int main() {
  * 
  *  ... TODO write more documentation when function is finished
  */
-int commandReader(Card* deckOfCards[], LinkedList* columns) {
+int commandReader(LinkedList *deckOfCards) {
     // STARTUP phase
     char* allowedCommands[] = {"LD", "SW", "SI", "SR", "SD", "QQ", "P"};
 
@@ -81,14 +79,17 @@ int commandReader(Card* deckOfCards[], LinkedList* columns) {
         case 0: // LD <filename> (loads deck into active deck)
             strcpy(lastCommand, "LD");
 
+            freeDeck(deckOfCards);
+            linked_list_init(deckOfCards);
+
             int loaded = loadFile(deckOfCards, argument);
             if (loaded != NUM_CARDS) {
                 strcpy(statusMessage, "Failed to load deck");
-                free_deck(deckOfCards, loaded);
+                freeDeck(deckOfCards);
                 return 1;
             }
 
-            updateColumns(columns, deckOfCards);
+            updateColumns(deckOfCards, columns);
             break;
 
         case 1: // SW (shows contents of deck)
@@ -96,7 +97,7 @@ int commandReader(Card* deckOfCards[], LinkedList* columns) {
             showAllCards(deckOfCards);
             break;
 
-        case 2: // SI <split>
+        case 2: // SI <split> (shuffles the deck from a given index)
             strcpy(lastCommand, "SI");
             
             int split;
@@ -119,13 +120,13 @@ int commandReader(Card* deckOfCards[], LinkedList* columns) {
             }
 
             shuffleSplit(deckOfCards, split);
-            updateColumns(columns, deckOfCards);
+            updateColumns(deckOfCards, columns);
             break;
 
         case 3: // SR (shuffles the deck to a random deck)
             strcpy(lastCommand, "SR");
             shuffleRandom(deckOfCards);
-            updateColumns(columns, deckOfCards);
+            updateColumns(deckOfCards, columns);
             break;
 
         case 4: // SD <filename>
@@ -149,48 +150,40 @@ int commandReader(Card* deckOfCards[], LinkedList* columns) {
 }
 
 
+
 /**
- * Randomly shuffles a deck of cards using the random insertion method.
+ * Shuffles a deck of cards in place using random insertion on a linked list.
  *
- * Each card from the original deck is inserted into a temporary pile at a
- * randomly chosen position, then copied back into the original array.
- *
- * @param deckOfCards Array of {@code NUM_CARDS} pointers to Card objects.
+ * @param deckOfCards Pointer to the linked-list deck to be shuffled.
  */
-void shuffleRandom(Card* deckOfCards[]) {
-    Card* shuffledDeck[NUM_CARDS] = { NULL }; 
-    int shuffled_size = 0;
+void shuffleRandom(LinkedList *deckOfCards) {
+    LinkedList shuffled;
+    linked_list_init(&shuffled);
 
-    for(int i = 0; i < NUM_CARDS; i++) {
-        // Choose a random position from 0 to shuffled_size
-        int pos = rand() % (shuffled_size + 1);
+    while (deckOfCards->head) {
+        // Remove card from top of deck
+        void *card = linked_list_pop_front(deckOfCards);
 
-        // Shift cards to the right to make room
-        for(int j = shuffled_size; j > pos; j--){
-            shuffledDeck[j] = shuffledDeck[j - 1];
-        }
+        // Choose random insertion position
+        int pos = rand() % (shuffled.size + 1);
 
-        // Insert the new card
-        shuffledDeck[pos] = deckOfCards[i];
-        shuffled_size++;
+        // Insert card data into shuffled deck
+        linked_list_insert_at(&shuffled, card, pos);
     }
 
-    // Copy shuffled deck back into deckOfCards
-    for(int i = 0; i < NUM_CARDS; i++){
-        deckOfCards[i] = shuffledDeck[i];
-    }
+    *deckOfCards = shuffled;
 }
+
 /**
  * Changes all cards to be shown in the UI
  */
-void showAllCards(Card *deckOfCards[]) {
-    for(int column = 0; column < NUM_COLUMNS; column++){
-        Node *current = columns[column].head;
-        while (current != NULL) {
-            Card* card = (Card*)current->data;
-            card_change_visibility(card);
-            current = current->next;
-        }
+void showAllCards(LinkedList *deckOfCards) {
+    Node *current = deckOfCards->head;
+
+    while(current) {
+        Card *card = current->data;
+        card->shown = true;
+        current = current->next;
     }
 }
 
@@ -200,36 +193,36 @@ void showAllCards(Card *deckOfCards[]) {
  * The deck is split at the given index and cards are alternately taken from each
  * pile to form a new shuffled deck.
  *
- * @param deckOfCards Array of {@code NUM_CARDS} pointers to Card objects.
+ * @param deckOfCards LinkedList of {@code NUM_CARDS} length with cards
  * @param split Index at which the deck is split (0 < split < NUM_CARDS).
  */
-void shuffleSplit(Card *deckOfCards[], int indexOfSplit) {
-    Card *shuffledDeck[NUM_CARDS];
+void shuffleSplit(LinkedList *deckOfCards, int split) {
+    LinkedList a, b, shuffled;
+    linked_list_init(&a);
+    linked_list_init(&b);
+    linked_list_init(&shuffled);
 
-    int i = 0;              // index for first pile
-    int j = indexOfSplit;   // index for second pile
-    int k = 0;              // index for shuffledDeck
-
-    // Interleave cards while both piles have cards
-    while (i < indexOfSplit && j < NUM_CARDS) {
-        shuffledDeck[k++] = deckOfCards[i++];
-        shuffledDeck[k++] = deckOfCards[j++];
+    // Split the deck into two piles
+    for (int i = 0; i < split; i++) {
+        linked_list_push(&a, linked_list_pop_front(deckOfCards));
     }
 
-    // Copy remaining cards from first pile
-    while (i < indexOfSplit) {
-        shuffledDeck[k++] = deckOfCards[i++];
+    while (deckOfCards->head) {
+        linked_list_push(&b, linked_list_pop_front(deckOfCards));
     }
 
-    // Copy remaining cards from second pile
-    while (j < NUM_CARDS) {
-        shuffledDeck[k++] = deckOfCards[j++];
+    // Interleave: take from A then B
+    while (a.head && b.head) {
+        linked_list_push(&shuffled, linked_list_pop_front(&a));
+        linked_list_push(&shuffled, linked_list_pop_front(&b));
     }
 
-    // Copy shuffled deck back into original deck
-    for (int n = 0; n < NUM_CARDS; n++) {
-        deckOfCards[n] = shuffledDeck[n];
-    }
+    // Append remainder
+    while (a.head) linked_list_push(&shuffled, linked_list_pop_front(&a));
+    while (b.head) linked_list_push(&shuffled, linked_list_pop_front(&b));
+
+    *deckOfCards = shuffled;
+
 }
 
 
@@ -297,15 +290,20 @@ Card *get_card_at(LinkedList *list, int index) {
 /**
  * Populate the columns with cards from the deck in a round-robin manner
  */
-void updateColumns(LinkedList* columns, Card* deckOfCards[]) {
+void updateColumns(LinkedList* deckOfCards, LinkedList* columns) {
     // Remove cards if they exist
     for(int i = 0; i < NUM_COLUMNS; i++){
-        while(columns[i].head != NULL) linked_list_pop(&columns[i]);
+        while(columns[i].head != NULL) linked_list_pop_tail(&columns[i]);
     }
 
-    // Fill each column with a card
-    for(int i = 0; i < NUM_CARDS; i++) {
-        linked_list_push(&columns[i % NUM_COLUMNS], (void *)deckOfCards[i]);
+    Node *current = deckOfCards->head;
+    int i = 0;
+
+    // Fill each column with cards
+    while (current) {
+        linked_list_push(&columns[i % NUM_COLUMNS], current->data);
+        current = current->next;
+        i++;
     }
 }
 
@@ -325,17 +323,15 @@ void initializeColumns(LinkedList* columns, LinkedList* finishCells) {
 }
 
 /**
- * Frees the memory allocated for the deck of cards
+ * Empties the deck of any cards
  */
-static void free_deck(Card* deckOfCards[], int count) {
-    for (int i = 0; i < count; i++) {
-        if (deckOfCards[i]) {
-            free(deckOfCards[i]->data);
-            free(deckOfCards[i]);
-        }
+void freeDeck(LinkedList *deckOfCards) {
+    while (deckOfCards->head != NULL) {
+        Card *card = linked_list_pop_tail(deckOfCards);
+        free(card->data);
+        free(card);
     }
 }
-
 
 
 

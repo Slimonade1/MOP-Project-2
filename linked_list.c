@@ -32,10 +32,40 @@ void linked_list_push(LinkedList* list, void* data) {
     list->size++;
 }
 
+void linked_list_insert_at(LinkedList* list, void* data, int index) {
+    if (index < 0 || index > list->size) {
+            return; // index out of bounds
+    }
+
+    Node* new_node = malloc(sizeof(Node));
+    if (!new_node) return;
+
+    new_node->data = data;
+    new_node->next = NULL;
+
+    // Insert at head
+    if (index == 0) {
+        new_node->next = list->head;
+        list->head = new_node;
+        list->size++;
+        return;
+    }
+
+    // Traverse to node before insertion point
+    Node* current = list->head;
+    for (int i = 0; i < index - 1; i++) {
+        current = current->next;
+    }
+
+    new_node->next = current->next;
+    current->next = new_node;
+    list->size++;
+}
+
 /**
  *  Remove and return the tail node
  */ 
-void* linked_list_pop(LinkedList* list) {
+void* linked_list_pop_tail(LinkedList* list) {
     if(list->head == NULL) return NULL; // Empty list
 
     if(list->head->next == NULL) {
@@ -56,6 +86,22 @@ void* linked_list_pop(LinkedList* list) {
     current->next = NULL;
     free(tail);
     list->size--;
+    return data;
+}
+
+/**
+ * Remove and return the head node
+ */
+void* linked_list_pop_front(LinkedList *list) {
+    if (!list->head) return NULL;
+
+    Node *node = list->head;
+    void *data = node->data;
+
+    list->head = node->next;
+    free(node);
+    list->size--;
+
     return data;
 }
 

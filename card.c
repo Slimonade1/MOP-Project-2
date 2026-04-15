@@ -11,6 +11,7 @@ void card_init(Card* card, char* data, bool shown){
     card->shown = shown;
 }
 
+// DEPRECATED
 void card_change_visibility(Card* card){
     card->shown = !card->shown;
 }
