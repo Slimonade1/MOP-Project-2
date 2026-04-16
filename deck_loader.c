@@ -5,6 +5,7 @@
 #include <string.h>
 
 #define NUM_CARDS 52
+#define DATA_DIR "data/"
 
 /**
  * Loads the deck of cards from the file "card_deck.txt" and saves
@@ -15,7 +16,7 @@ int loadFile(LinkedList *deckOfCards, char* fileName){
     FILE *file = NULL;
 
     // If no filename is provided, use the default deck file
-    if(fileName == NULL) file = fopen("std_card_deck.txt", "r");
+    if(strcmp(fileName, DATA_DIR)) file = fopen("data/std_card_deck.txt", "r");
     else file = fopen(fileName, "r");
 
     if (file == NULL) {

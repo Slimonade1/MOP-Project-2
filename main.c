@@ -9,15 +9,29 @@
 #include "deck_loader.h"
 #include "card.h"
 
+// Global variables
 #define NUM_COLUMNS 7
 #define NUM_CARDS 52
+#define DATA_DIR "data/"
+
+char statusMessage[50];
+char lastCommand[10];
+typedef enum {
+    GAME_STARTUP,
+    GAME_PLAY,
+    GAME_QUIT
+} GamePhase;
+
+LinkedList columns[NUM_COLUMNS];
+LinkedList finishCells[4];
 
 // Prototypes
 
-int commandReader(LinkedList *deckOfCards);
+GamePhase commandReaderStartup(LinkedList *deckOfCards);
 void showAllCards(LinkedList *deckOfCards);
 void shuffleSplit(LinkedList *deckOfCards, int split);
 void shuffleRandom(LinkedList *deckOfCards);
+int saveFile(LinkedList *deckOfCards, char *fileName);
 
 void drawToTerminal(LinkedList* columns, LinkedList* finishCells);
 Card *get_card_at(LinkedList *list, int index);
@@ -26,27 +40,35 @@ void initializeColumns(LinkedList* columns, LinkedList* finishCells);
 void updateColumns(LinkedList *deck, LinkedList *columns);
 void freeDeck(LinkedList *deckOfCards);
 
-// Global variables
-char statusMessage[50];
-char lastCommand[10];
-
-LinkedList columns[NUM_COLUMNS];
-LinkedList finishCells[4];
-
 int main() {
     LinkedList deckOfCards;
     linked_list_init(&deckOfCards);
+
+    GamePhase phase = GAME_STARTUP;
+
+    initializeColumns(columns, finishCells);
     srand((unsigned)time(NULL)); // create new seed
 
-    // Empty grid start of game
-    initializeColumns(columns, finishCells);
-    drawToTerminal(columns, finishCells);
+    while(phase != GAME_QUIT) {
+        drawToTerminal(columns, finishCells); // Empty grid start of game
 
-    while(true) { // TEMP ALWAYS TRUE, switch with command "QQ"
-        strcpy(statusMessage, "OK");
-        commandReader(&deckOfCards);
-        drawToTerminal(columns, finishCells);
+        switch(phase) {
+            case GAME_STARTUP:
+                phase = commandReaderStartup(&deckOfCards);
+                break;
+            
+            case GAME_PLAY:
+                // TODO IMPLEMENT THIS
+                phase = GAME_QUIT;
+                break;
+            
+            default:
+                phase = GAME_QUIT;
+                break;
+        }
     }
+
+    freeDeck(&deckOfCards);
     return 0;
 }
 
@@ -55,10 +77,8 @@ int main() {
  * 
  *  ... TODO write more documentation when function is finished
  */
-int commandReader(LinkedList *deckOfCards) {
+GamePhase commandReaderStartup(LinkedList *deckOfCards) {
     // STARTUP phase
-    char* allowedCommands[] = {"LD", "SW", "SI", "SR", "SD", "QQ", "P"};
-
     char input[100];
     fgets(input, sizeof(input), stdin);
 
@@ -66,87 +86,97 @@ int commandReader(LinkedList *deckOfCards) {
     char *command = strtok(input, " \t\n");
     char *argument = strtok(NULL, " \t\n");
 
-    // Find command index
-    int match = -1;
-    for(int i = 0; i < sizeof(allowedCommands) / sizeof(allowedCommands[0]); i++) {
-        if(strcmp(command, allowedCommands[i]) == 0) {
-            match = i;
-            break;
+    char path[256]; // Path for loadFile and saveFile
+
+    // LD <filename> (loads deck into active deck)
+    if(strcmp(command, "LD") == 0) { 
+        strcpy(lastCommand, "LD");
+
+        freeDeck(deckOfCards);
+        linked_list_init(deckOfCards);
+
+        snprintf(path, sizeof(path), "%s%s", DATA_DIR, argument); // insert data directory
+
+        int loaded = loadFile(deckOfCards, path);
+        if (loaded != NUM_CARDS) {
+            strcpy(statusMessage, "Failed to load deck");
+            freeDeck(deckOfCards);
+            return GAME_STARTUP;
+        }
+
+        updateColumns(deckOfCards, columns);
+        return GAME_STARTUP;
+    }
+
+    // SW (shows contents of deck)
+    if(strcmp(command, "SW") == 0) {
+        strcpy(lastCommand, "SW");
+        showAllCards(deckOfCards);
+        return GAME_STARTUP;
+    }
+
+    // SI <split> (shuffles the deck from a given index)
+    if(strcmp(command, "SI") == 0) {
+        strcpy(lastCommand, "SI");
+            
+        int split;
+
+        if(argument == NULL) {
+            // If no argument was given, split at random position
+            split = rand() % (NUM_CARDS - 1) + 1; // 1 .. NUM_CARDS-1
+        } else {
+            char *end;
+            split = (int)strtol(argument, &end, 10);
+            if (end == argument || *end != '\0') {
+                strcpy(statusMessage, "Argument must be an int");
+                return GAME_STARTUP;
+            }
+
+            if(split <= 0 || split >= NUM_CARDS) {
+                strcpy(statusMessage, "Index out of bounds");
+                return GAME_STARTUP;
+            }
+        }
+
+        shuffleSplit(deckOfCards, split);
+        updateColumns(deckOfCards, columns);
+        return GAME_STARTUP;
+    }
+
+    // SR (shuffles the deck to a random deck)
+    if(strcmp(command, "SR") == 0) {
+        strcpy(lastCommand, "SR");
+        shuffleRandom(deckOfCards);
+        updateColumns(deckOfCards, columns);
+        return GAME_STARTUP;
+    }
+
+    // SD <filename> (saves the current deck to <filename>)
+    if(strcmp(command, "SD") == 0) {
+        strcpy(lastCommand, "SD");
+        if(argument == NULL){
+            strcpy(statusMessage, "Missing filename");
+        }
+
+        snprintf(path, sizeof(path), "%s%s", DATA_DIR, argument); // insert data directory
+
+        int saved = saveFile(deckOfCards, path);
+        if(saved != 0){
+            strcpy(statusMessage, "Failed to save deck");
+            return GAME_STARTUP;
         }
     }
 
-    switch(match) {
-        case 0: // LD <filename> (loads deck into active deck)
-            strcpy(lastCommand, "LD");
+    if(strcmp(command, "QQ") == 0) {
+        return GAME_QUIT;
+    }
 
-            freeDeck(deckOfCards);
-            linked_list_init(deckOfCards);
+    if(strcmp(command, "P") == 0) {
+        return GAME_PLAY;
+    }
 
-            int loaded = loadFile(deckOfCards, argument);
-            if (loaded != NUM_CARDS) {
-                strcpy(statusMessage, "Failed to load deck");
-                freeDeck(deckOfCards);
-                return 1;
-            }
-
-            updateColumns(deckOfCards, columns);
-            break;
-
-        case 1: // SW (shows contents of deck)
-            strcpy(lastCommand, "SW");
-            showAllCards(deckOfCards);
-            break;
-
-        case 2: // SI <split> (shuffles the deck from a given index)
-            strcpy(lastCommand, "SI");
-            
-            int split;
-
-            if(argument == NULL) {
-                // If no argument was given, split at random position
-                split = rand() % (NUM_CARDS - 1) + 1; // 1 .. NUM_CARDS-1
-            } else {
-                char *end;
-                split = (int)strtol(argument, &end, 10);
-                if (end == argument || *end != '\0') {
-                    strcpy(statusMessage, "Argument must be an int");
-                    return 1;
-                }
-
-                if(split <= 0 || split >= NUM_CARDS) {
-                    strcpy(statusMessage, "Index out of bounds");
-                    return 1;
-                }
-            }
-
-            shuffleSplit(deckOfCards, split);
-            updateColumns(deckOfCards, columns);
-            break;
-
-        case 3: // SR (shuffles the deck to a random deck)
-            strcpy(lastCommand, "SR");
-            shuffleRandom(deckOfCards);
-            updateColumns(deckOfCards, columns);
-            break;
-
-        case 4: // SD <filename>
-            // TODO Implement saving the current order of cards to a file
-            break;
-        case 5: // QQ
-            // TODO Implement quitting the game
-            break;
-        case 6: // P
-            // TODO Implement initializing the PLAY phase and drawing the initial game state
-            break;
-        default:
-            strcpy(statusMessage, "Unknown command");
-        }
-
-    return 0;
-
-
-    // PLAY phase
-    // TODO Implement a command reader that reads commands and executes them
+    strcpy(statusMessage, "Unknown command");
+    return GAME_STARTUP;
 }
 
 
@@ -223,6 +253,26 @@ void shuffleSplit(LinkedList *deckOfCards, int split) {
 
     *deckOfCards = shuffled;
 
+}
+
+int saveFile(LinkedList *deckOfCards, char *fileName){    
+    if(strcmp(fileName, "data/std_card_deck.txt") == 0) return 1;   // Guard against changing the standard deck
+    
+    FILE *filePrinter;
+
+    // Open a file in write mode
+    filePrinter = fopen(fileName, "w");
+    if(!filePrinter) return 1;
+
+    Node *current = deckOfCards->head;
+    while(current) {
+        Card *card = (Card *)current->data;
+        fprintf(filePrinter, "%s\n", card->data);
+        current = current->next;
+    }
+
+    fclose(filePrinter);
+    return 0;
 }
 
 
