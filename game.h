@@ -16,13 +16,13 @@ typedef enum {
 
 /* Global game state */
 extern LinkedList columns[NUM_COLUMNS];
-extern LinkedList finishCells[4];
+extern LinkedList foundationCells[4];
 
 extern char statusMessage[50];
 extern char lastCommand[10];
 
 /* Core game functions */
-void updateColumns(LinkedList *deckOfCards, LinkedList *columns);
+void dealCards(LinkedList *deckOfCards, LinkedList *columns);
 void freeDeck(LinkedList *deckOfCards);
 
 #endif

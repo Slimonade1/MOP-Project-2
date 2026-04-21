@@ -8,7 +8,7 @@
 #include "linked_list.h"
 #include "deck_loader.h"
 #include "card.h"
-#include "command_reader_startup.h"
+#include "command_reader.h"
 #include "game.h"
 
 // Global variables
@@ -29,16 +29,17 @@ Card *get_card_at(LinkedList *list, int index);
 void initializeColumns(LinkedList* columns, LinkedList* finishCells);
 
 int main() {
+    GamePhase phase = GAME_STARTUP;
+
     LinkedList deckOfCards;
     linked_list_init(&deckOfCards);
 
-    GamePhase phase = GAME_STARTUP;
-
     initializeColumns(columns, finishCells);
-    srand((unsigned)time(NULL)); // create new seed
+    srand((unsigned)time(NULL)); // create new seed / randomize game
 
     while(phase != GAME_QUIT) {
         drawToTerminal(columns, finishCells); // Empty grid start of game
+        strcpy(statusMessage, "OK");
 
         switch(phase) {
             case GAME_STARTUP:
@@ -46,8 +47,7 @@ int main() {
                 break;
             
             case GAME_PLAY:
-                // TODO IMPLEMENT THIS
-                phase = GAME_QUIT;
+                phase = commandReaderPlay(columns, finishCells, statusMessage, lastCommand);
                 break;
             
             default:
@@ -74,7 +74,7 @@ void drawToTerminal(LinkedList *columns, LinkedList finishCells[4]) {
             maxRows = columns[i].size;
     }
 
-    // We need enough rows to show finishing cells
+    // We need enough rows to show foundation cells
     int totalRows = maxRows > 8 ? maxRows : 8;
 
     for (int row = 0; row < totalRows; row++) {
@@ -86,7 +86,7 @@ void drawToTerminal(LinkedList *columns, LinkedList finishCells[4]) {
             printf("%-2s\t", display);
         }
         
-        // Finishing cells
+        // Foundation cells
         if (row % 2 == 0) {
             int fIndex = row / 2;
 
@@ -121,9 +121,10 @@ Card *get_card_at(LinkedList *list, int index) {
 }
 
 /**
- * Populate the columns with cards from the deck in a round-robin manner
+ * Populate the columns with cards from the deck in a round-robin manner 
+ * in the startup phase
  */
-void updateColumns(LinkedList* deckOfCards, LinkedList* columns) {
+void dealCards(LinkedList* deckOfCards, LinkedList* columns) {
     // Remove cards if they exist
     for(int i = 0; i < NUM_COLUMNS; i++){
         while(columns[i].head != NULL) linked_list_pop_tail(&columns[i]);
@@ -165,7 +166,4 @@ void freeDeck(LinkedList *deckOfCards) {
         free(card);
     }
 }
-
-
-
 
