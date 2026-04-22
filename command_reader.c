@@ -130,6 +130,7 @@ GamePhase commandReaderStartup(
 
     if(strcmp(command, "P") == 0) {
         strcpy(lastCommand, "P");
+        setupGame(deckOfCards, columns);
         return GAME_PLAY;
     }
 
@@ -233,6 +234,50 @@ int saveFile(LinkedList *deckOfCards, char *fileName){
     return 0;
 }
 
+/**
+ * Sets up the game by dealing cards from the deck into the columns according to Yukon Solitaire rules.
+ * The cards are dealt from left to right, one row at a time. 
+ * After dealing, the columns contain 1, 6, 7, 8, 9, 10, and 11 cards respectively, counted from left to right.
+ */
+void setupGame(LinkedList *deckOfCards, LinkedList *columns) {
+    // Free current cards
+    for(int i = 0; i < NUM_COLUMNS; i++){
+        while(columns[i].head) linked_list_pop_tail(&columns[i]);
+    }
+
+    int colHeight[NUM_COLUMNS] = { 1, 6, 7, 8, 9, 10, 11 };
+
+    for (int row = 0; row < 11; row++) {
+        for (int col = 0; col < NUM_COLUMNS; col++) {
+            // this column is already full, move to next column
+            if (row >= colHeight[col]) continue;        
+
+            Card *card = linked_list_pop_front(deckOfCards);
+            card->shown = (colHeight[col] - row <= 5); // last 5 cards in column are shown
+
+            linked_list_push(&columns[col], card);
+        }
+    }
+}
+
+/**
+ * Reads and executes a single command during the PLAY phase of the game.
+ * This function reads a move command from standard input, parses it into a Move struct,
+ * validates the move according to Yukon Solitaire rules, and if valid, executes the move by updating the linked list structures of columns and foundations.
+ * 
+ * Supported move formats include:
+ * - C<source>:<card>->C<dest>  (e.g., C6:4H->C4)
+ * - C<source>:<card>->F<dest> (e.g., C7:AS->F2)
+ * - F<source>->C<dest>        (e.g., F4->C6)
+ * 
+ * Error conditions (invalid command format, illegal move) are reported via the global statusMessage and do not terminate the PLAY phase.
+ * 
+ * @param columns Array of 7 LinkedList columns representing tableau columns.
+ * @param foundationCells Array of 4 LinkedList foundation piles.
+ * @param statusMessage Buffer to store status messages for the UI.
+ * @param lastCommand Buffer to store the last command for display in the UI.
+ * @return The next GamePhase, which is GAME_PLAY for normal execution or GAME_QUIT when quitting.
+ */
 GamePhase commandReaderPlay(
     LinkedList *columns,
     LinkedList *foundationCells,
@@ -328,18 +373,10 @@ bool parseMove(char *input, Move *move) {
     move->destIndex = atoi(dest + 1);
 
     // Validate indices
-    if (move->sourceType == 'C' && (move->sourceIndex < 1 || move->sourceIndex > 7)) {
-        return false;
-    }
-    if (move->sourceType == 'F' && (move->sourceIndex < 1 || move->sourceIndex > 4)) {
-        return false;
-    }
-    if (move->destType == 'C' && (move->destIndex < 1 || move->destIndex > 7)) {
-        return false;
-    }
-    if (move->destType == 'F' && (move->destIndex < 1 || move->destIndex > 4)) {
-        return false;
-    }
+    if (move->sourceType == 'C' && (move->sourceIndex < 1 || move->sourceIndex > 7)) return false;
+    if (move->sourceType == 'F' && (move->sourceIndex < 1 || move->sourceIndex > 4)) return false;
+    if (move->destType == 'C' && (move->destIndex < 1 || move->destIndex > 7)) return false;
+    if (move->destType == 'F' && (move->destIndex < 1 || move->destIndex > 4)) return false;
 
     return true;
 }
@@ -391,8 +428,9 @@ bool validateMove(Move *move, LinkedList *columns, LinkedList *foundationCells){
         sourceCard = get_tail_card(&foundationCells[move->sourceIndex - 1]);
         if(sourceCard == NULL) return false; // Source foundation is empty
         
-        // For foundation moves, card must match the bottom card
-        if(strcmp(sourceCard->data, move->card) != 0) return false;
+        // For foundation moves, card is not specified
+        if (move->card[0] != '\0') return false;
+        strcpy(move->card, sourceCard->data);
     }
 
     // Get destination card
@@ -430,6 +468,9 @@ bool validateMove(Move *move, LinkedList *columns, LinkedList *foundationCells){
     return true;
 }
 
+/**
+ * Helper function to convert rank character to integer value for comparison.
+ */
 int get_rank(char rank) {
     if (rank >= '2' && rank <= '9') return rank - '0';  // '2' -> 2, ..., '9' -> 9
     if (rank == 'T') return 10;
@@ -440,6 +481,9 @@ int get_rank(char rank) {
     return -1;  // Invalid rank
 }
 
+/**
+ * Executes a validated move by updating the linked list structures of columns and foundations.
+ */
 void executeMove(Move* move, LinkedList* columns, LinkedList* foundationCells) {
     LinkedList *src, *dst;
 
@@ -454,88 +498,121 @@ void executeMove(Move* move, LinkedList* columns, LinkedList* foundationCells) {
         : &foundationCells[move->destIndex - 1];
 
     /* === COLUMN -> COLUMN (STACK MOVE) === */
-    if (move->sourceType == 'C' && move->destType == 'C') {
-        Node *prev = NULL;
-        Node *cur  = src->head;
-
-        // Find start of stack
-        while (cur) {
-            Card *card = cur->data;
-            if (strcmp(card->data, move->card) == 0) break;
-
-            prev = cur;
-            cur = cur->next;
-        }
-
-        // Detach from source
-        if (prev) prev->next = NULL;
-        else src->head = NULL;
-
-        // Attach to destination
-        if (!dst->head) {
-            dst->head = cur;
-        } else {
-            Node *tail = dst->head;
-            while (tail->next) tail = tail->next;
-            tail->next = cur;
-        }
-
-        // Update sizes
-        int moved = 0;
-        Node *tmp = cur;
-        while (tmp) {
-            moved++;
-            tmp = tmp->next;
-        }
-        src->size -= moved;
-        dst->size += moved;
-        return;
-    }
+    if (move->sourceType == 'C' && move->destType == 'C') columnToColumnMove(move, src, dst);
 
     /* === COLUMN -> FOUNDATION (single card) === */
-    if (move->sourceType == 'C' && move->destType == 'F') {
-        Node *prev = NULL;
-        Node *cur  = src->head;
-
-        while (cur->next) {
-            prev = cur;
-            cur = cur->next;
-        }
-
-        if (prev)prev->next = NULL;
-        else src->head = NULL;
-
-        cur->next = NULL;
-        src->size--;
-
-        if (!dst->head)
-            dst->head = cur;
-        else {
-            Node *tail = dst->head;
-            while (tail->next) tail = tail->next;
-            tail->next = cur;
-        }
-
-        dst->size++;
-        return;
-    }
+    if (move->sourceType == 'C' && move->destType == 'F') columnToFoundationMove(move, src, dst);
 
     /* === FOUNDATION -> COLUMN (single card) === */
-    if (move->sourceType == 'F' && move->destType == 'C') {
-        Node *node = src->head;
+    if (move->sourceType == 'F' && move->destType == 'C') foundationToColumnMove(move, src, dst);
+}
 
-        src->head = node->next;
-        node->next = NULL;
-        src->size--;
+/**
+ * Performs a column-to-column move by detaching the specified card and all cards below it from the source column
+ */
+void columnToColumnMove(Move *move, LinkedList *src, LinkedList *dst){
+    Node *prev = NULL;
+    Node *cur = src->head;
 
-        if (!dst->head)
-            dst->head = node;
-        else {
-            Node *t = dst->head;
-            while (t->next) t = t->next;
-            t->next = node;
-        }
+    // Find start of stack
+    while (cur) {
+        Card *card = cur->data;
+        if (strcmp(card->data, move->card) == 0) break;
 
-        dst->size++;
+        prev = cur;
+        cur = cur->next;
     }
+
+    // Detach from source
+    if (prev) prev->next = NULL;
+    else src->head = NULL;
+
+    // Attach to destination
+    if (!dst->head) {
+        dst->head = cur;
+    } else {
+        Node *tail = dst->head;
+        while (tail->next) tail = tail->next;
+        tail->next = cur;
+    }
+
+    // Update sizes
+    int moved = 0;
+    Node *tmp = cur;
+    while (tmp) {
+        moved++;
+        tmp = tmp->next;
+    }
+    src->size -= moved;
+    dst->size += moved;
+
+    // Reveal previous card if all no cards below
+    if (prev) {
+        Card *prevCard = prev->data;
+        prevCard->shown = true;
+    }
+}
+
+/**
+ * Performs a column-to-foundation move by detaching the specified card (which must be the last card in the column) and moving it to the destination foundation.
+ */
+void columnToFoundationMove(Move *move, LinkedList *src, LinkedList *dst){
+    Node *prev = NULL;
+    Node *cur  = src->head;
+
+    // Find the card to move (should be the last card in the column)
+    while (cur->next) {
+        prev = cur;
+        cur = cur->next;
+    }
+
+    // Set prev->next to NULL to detach the card from the column
+    if (prev)prev->next = NULL;
+    else src->head = NULL;
+
+    // changes current->next to NULL, but is unnecessary since this is the last card
+    // cur->next = NULL;
+
+    if (!dst->head)
+        // Move to empty foundation
+        dst->head = cur; 
+    else {
+        // Move on top of existing foundation card
+        Node *tail = dst->head;
+        while (tail->next) tail = tail->next;
+        tail->next = cur;
+    }
+
+    // Update size
+    src->size--;
+    dst->size++;
+
+    // Reveal previous card if all no cards below
+    if (prev) {
+        Card *prevCard = prev->data;
+        prevCard->shown = true;
+    }
+}
+
+/**
+ * Performs a foundation-to-column move by detaching the top card of the source foundation and moving it to the destination column.
+ */
+void foundationToColumnMove(Move *move, LinkedList *src, LinkedList *dst){
+    // Only the top card of the source foundation may be moved, so we take from the tail
+    Node *node = src->head;
+
+    // If there's only one card, head becomes NULL. Otherwise, we need to find the second-to-last node
+    src->head = node->next;
+    node->next = NULL;
+
+    if (!dst->head)
+        dst->head = node;
+    else {
+        Node *t = dst->head;
+        while (t->next) t = t->next;
+        t->next = node;
+    }
+
+    src->size--;
+    dst->size++;
 }

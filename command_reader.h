@@ -24,6 +24,7 @@ void showAllCards(LinkedList *deckOfCards);
 void shuffleSplit(LinkedList *deckOfCards, int split);
 void shuffleRandom(LinkedList *deckOfCards);
 int saveFile(LinkedList *deckOfCards, char *fileName);
+void setupGame(LinkedList *deckOfCards, LinkedList *columns);
 
 // Play Phase
 
@@ -45,6 +46,10 @@ typedef struct {
 bool parseMove(char* input, Move* move);
 bool validateMove(Move* move, LinkedList *columns, LinkedList *foundationCells);
 int get_rank(char rank);
-void executeMove(Move* move, LinkedList* columns, LinkedList* foundationCells);
+
+void executeMove(Move *move, LinkedList *columns, LinkedList *foundationCells);
+void columnToColumnMove(Move *move, LinkedList *src, LinkedList *dst);
+void columnToFoundationMove(Move *move, LinkedList *src, LinkedList *dst);
+void foundationToColumnMove(Move *move, LinkedList *src, LinkedList *dst);
 
 #endif // COMMAND_READER_H
