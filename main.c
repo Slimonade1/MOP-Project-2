@@ -47,6 +47,7 @@ int main() {
                 break;
             
             case GAME_PLAY:
+                // TODO: Check for win condition here and update status message if won
                 phase = commandReaderPlay(columns, finishCells, statusMessage, lastCommand);
                 break;
             
