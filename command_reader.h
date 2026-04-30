@@ -51,5 +51,6 @@ void executeMove(Move *move, LinkedList *columns, LinkedList *foundationCells);
 void columnToColumnMove(Move *move, LinkedList *src, LinkedList *dst);
 void columnToFoundationMove(Move *move, LinkedList *src, LinkedList *dst);
 void foundationToColumnMove(Move *move, LinkedList *src, LinkedList *dst);
+void gameWon(LinkedList *foundationCells);
 
 #endif // COMMAND_READER_H

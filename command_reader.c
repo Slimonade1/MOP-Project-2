@@ -308,8 +308,10 @@ GamePhase commandReaderPlay(
         return GAME_PLAY;
     }
 
-    // TODO: Execute the move
     executeMove(&move, columns, foundationCells);
+
+    // Check for win condition after the move
+    gameWon(foundationCells);
 
     strcpy(statusMessage, "Move parsed successfully");
     return GAME_PLAY;
@@ -615,4 +617,12 @@ void foundationToColumnMove(Move *move, LinkedList *src, LinkedList *dst){
 
     src->size--;
     dst->size++;
+}
+
+void gameWon(LinkedList *foundationCells) {
+    for (int i = 0; i < 4; i++) {
+        if (foundationCells[i].size != 13) return;
+    }
+    // If we reach here, the game is won
+    strcpy(statusMessage, "Congratulations! You've won the game!");
 }
