@@ -15,7 +15,7 @@
  *   -SR            : Shuffle the deck randomly
  *   -SD <filename> : Save the current deck to a file
  *   -P             : Transition to the PLAY phase
- *   -QQ            : Quit the game\n
+ *   -QQ            : Quit the game
  *
  * Error conditions (invalid commands, invalid arguments, or failed file
  * operations) are reported via the global statusMessage and do not
@@ -28,18 +28,23 @@
  *         GAME_QUIT when quitting.
  */
 GamePhase commandReaderStartup(
+    // TODO Could be more protective against calling not calling LD as first command, which would cause undefined behaviour in later commands
     LinkedList *deckOfCards,
     LinkedList *columns,
     char *statusMessage,
     char *lastCommand) {
 
-    // STARTUP phase
     char input[100];
     fgets(input, sizeof(input), stdin);
 
     // Tokenize the input into command and argument
     char *command = strtok(input, " \t\n");
     char *argument = strtok(NULL, " \t\n");
+
+    if(command == NULL) {
+        strcpy(statusMessage, "No command entered");
+        return GAME_STARTUP;
+    }
 
     char path[256]; // Path for loadFile and saveFile
 
@@ -50,7 +55,10 @@ GamePhase commandReaderStartup(
         freeDeck(deckOfCards);
         linked_list_init(deckOfCards);
 
-        snprintf(path, sizeof(path), "%s%s", DATA_DIR, argument); // insert data directory
+        if (argument == NULL)
+            snprintf(path, sizeof(path), "%sstd_card_deck.txt", DATA_DIR);
+        else
+            snprintf(path, sizeof(path), "%s%s", DATA_DIR, argument);
 
         int loaded = loadFile(deckOfCards, path);
         if (loaded != NUM_CARDS) {

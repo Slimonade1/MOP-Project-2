@@ -15,9 +15,7 @@
 int loadFile(LinkedList *deckOfCards, char* fileName){
     FILE *file = NULL;
 
-    // If no filename is provided, use the default deck file
-    if(strcmp(fileName, DATA_DIR)) file = fopen("data/std_card_deck.txt", "r");
-    else file = fopen(fileName, "r");
+    file = fopen(fileName, "r");
 
     if (file == NULL) {
         return 0;

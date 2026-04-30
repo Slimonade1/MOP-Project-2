@@ -29,6 +29,8 @@ Card *get_card_at(LinkedList *list, int index);
 void initializeColumns(LinkedList* columns, LinkedList* finishCells);
 
 int main() {
+    setvbuf(stdout, NULL, _IONBF, 0);  // Disable buffering for stdout , workaround for python subprocess reading output
+    
     GamePhase phase = GAME_STARTUP;
 
     LinkedList deckOfCards;
@@ -64,6 +66,7 @@ int main() {
  * Draws the GUI of the game to the console
  */
 void drawToTerminal(LinkedList *columns, LinkedList finishCells[4]) {
+    printf("BEGIN_STATE\n"); // USED FOR PYTHON INTEPRETING
 
     printf("C1\tC2\tC3\tC4\tC5\tC6\tC7\n\n");
 
@@ -100,9 +103,12 @@ void drawToTerminal(LinkedList *columns, LinkedList finishCells[4]) {
         printf("\n");
     }
 
+    printf("END_STATE\n"); // USED FOR PYTHON INTEPRETING
+
     printf("\nLAST Command: %s\n", lastCommand);
     printf("STATUS: %s\n", statusMessage);
-    printf("INPUT > ");
+    printf("INPUT >\n");
+    fflush(stdout); // Ensure all output is sent to terminal immediately
 }
 
 

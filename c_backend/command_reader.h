@@ -11,7 +11,7 @@
 
 #define DATA_DIR "data/"
 
-// Startup phase
+// --- Startup phase ---
 
 GamePhase commandReaderStartup(
     LinkedList *deckOfCards,
@@ -26,7 +26,7 @@ void shuffleRandom(LinkedList *deckOfCards);
 int saveFile(LinkedList *deckOfCards, char *fileName);
 void setupGame(LinkedList *deckOfCards, LinkedList *columns);
 
-// Play Phase
+// --- Play Phase ---
 
 GamePhase commandReaderPlay(
     LinkedList *columns,
