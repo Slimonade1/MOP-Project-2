@@ -12,7 +12,7 @@ FOUND_SPACING = 120
 
 root = tk.Tk()
 root.title("Yukon")
-canvas = tk.Canvas(root, width=1200, height=700, bg="darkgreen")
+canvas = tk.Canvas(root, width=1200, height=600, bg="darkgreen")
 canvas.pack()
 
 entry = tk.Entry(root, font=("Consolas", 14))

@@ -11,10 +11,6 @@
 #include "command_reader.h"
 #include "game.h"
 
-// Global variables
-#define NUM_COLUMNS 7
-#define NUM_CARDS 52
-
 char statusMessage[50];
 char lastCommand[10];
 
