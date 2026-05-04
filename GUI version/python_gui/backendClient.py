@@ -65,16 +65,3 @@ def parse_state(lines):
 
 
     return {"columns": columns, "foundations": foundations}
-
-def start_game(deck_file):
-    state = read_state()
-    
-    send("LD " + deck_file)
-    state = read_state()
-
-    send("P")
-    state = read_state()
-
-    state = parse_state(state)
-
-    return state

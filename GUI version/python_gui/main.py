@@ -55,9 +55,6 @@ def draw_cards(canvas, columns):
                 canvas.card_text[rect_id] = card
                 canvas.card_text[text_id] = card
 
-    # Redraw foundations on top
-    draw_foundations(canvas, current_state.get("foundations", {}))
-
 
 def draw_foundations(canvas, foundations):
     """Draw the four foundation piles."""
@@ -84,10 +81,15 @@ def send_command(event=None):
     draw_cards(canvas, state["columns"])
     draw_foundations(canvas, state["foundations"])
 
-entry.bind("<Return>", send_command)
+# Bind Enter key to send command
+entry.bind("<Return>", send_command) 
 
 # Start game and initial draw
 current_state = backendClient.parse_state(backendClient.read_state())
 draw_cards(canvas, current_state["columns"])
+
+# Write a welcome message to the user, prompting them to enter a command
+canvas.create_text(600, 300, text="Welcome to Yukon Solitaire!\nEnter commands below to play. \n (write LD to load deck)", font=("Arial", 18), fill="white", justify="center")
+
 
 root.mainloop()
