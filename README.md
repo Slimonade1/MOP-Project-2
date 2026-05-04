@@ -1,139 +1,65 @@
-# Yukon Solitaire – MOP Project 2
+# Yukon Solitaire — GUI Version
 
-This project is an implementation of **Yukon Solitaire** written in **C**, developed as part of the *02322 Machine Oriented Programming* course.
+This README describes the GUI variant of the Yukon Solitaire project located in the GUI version folder. The GUI is a small Python front-end (Tkinter) that talks to the C backend executable.
 
-The program is terminal-based and demonstrates low-level programming concepts such as dynamic memory management, linked lists, modular design, and explicit state handling.
+**Contents**
 
----
-
-## Features
-
-- Text-based Yukon Solitaire game
-- Linked-list based card and pile representation (no arrays for card storage)
-- Multiple game phases:
-  - **STARTUP** – load, shuffle, and configure the deck
-  - **PLAY** – perform legal solitaire moves
-  - **QUIT** – clean program termination
-- Command-driven interface
-- Deck loading and saving to files
-- Input validation and rule enforcement
+- `GUI version/c_backend/` — C backend (same core game logic as the console version). Produces `game.exe` on Windows.
+- `GUI version/python_gui/` — Python GUI client (`main.py`) and `backendClient.py` which spawns the C backend and exchanges commands/state.
 
 ---
 
-## Compilation
+**Prerequisites (Windows)**
 
-Compile the program using `gcc`:
+- Python 3.8+ (Tkinter is required; included with standard CPython installers)
+- A C compiler that can produce a Windows executable (e.g., MinGW-w64 or MSYS2 `gcc`).
+
+---
+
+Building the backend (c_backend)
+
+1. Open a terminal and change to the `GUI version\c_backend` directory.
+2. Compile with `gcc` (MinGW/MSYS):
 
 ```bash
-gcc *.c -o game
+gcc *.c -O2 -o game.exe
 ```
 
-This will produce an executable named `game`.
+This should produce `game.exe` inside `GUI version/c_backend`. The Python client expects the executable to be named `game.exe`.
 
 ---
 
-## Running the Game
+Running the GUI
 
-Run the program from the project directory:
+1. Make sure `game.exe` exists in `GUI version/c_backend`.
+2. From the `GUI version/python_gui` directory run:
 
 ```bash
-./game
+python main.py
 ```
 
-The game reads commands from standard input and displays the board state after each command.
+3. The Tkinter window will open. Use the text entry at the bottom to type the same commands used in the console version (e.g., `LD <deckfile>`, `P`, moves, `QQ`). Press Enter to send commands.
+
+Notes:
+- The GUI uses `backendClient.py` to launch `game.exe` and parse the textual state output between `BEGIN_STATE` / `END_STATE` markers.
+- Deck files are located in the `data/` directories; you can pass relative paths from the `c_backend` working directory (or copy desired decks into `GUI version/c_backend/data/`).
 
 ---
 
-## Game Phases
+Implementation details
 
-### STARTUP Phase
-In this phase, the player can issue setup commands **without restriction**.
-
-Supported commands:
-- `LD <filename>` — Load a deck from file
-- `SI <n>` — Shuffle deck using split-interleave at index `n`
-- `SR` — Random shuffle
-- `SW` — Show all cards
-- `SD <filename>` — Save current deck
-- `P` — Transition to PLAY phase
-- `QQ` — Quit game
+- The GUI front-end is implemented using `tkinter` (`main.py`).
+- `backendClient.py` launches the backend and provides `send()`, `read_state()` and `parse_state()` helpers.
 
 ---
 
-### PLAY Phase
-In this phase, the player performs legal Yukon Solitaire moves.
+Troubleshooting
 
-Supported move formats:
-- `C<source>:<card>->C<dest>`
-- `C<source>:<card>->F<dest>`
-- `F<source>->C<dest>`
-- `QQ` — Quit game
-
-All moves are parsed, validated, and executed according to Yukon rules.
+- If the GUI fails to start because `game.exe` cannot be found, confirm compilation output and that the executable is named `game.exe`.
+- If `tkinter` is missing, install the standard Python distribution that includes Tk support or install the appropriate OS packages.
 
 ---
 
-## Project Structure
+Author
 
-```
-.
-├── main.c               # Program entry point and main game loop
-├── command_reader.c     # Input parsing and command handling
-├── command_reader.h
-├── game.h               # Shared game state and core definitions
-├── linked_list.c        # Generic linked list implementation
-├── linked_list.h
-├── deck_loader.c        # File loading logic
-├── deck_loader.h
-├── card.c               # Card representation and helpers
-├── card.h
-├── data/                # Contains card decks
-└── README.md
-```
-
----
-
-## Data Structures
-
-### Card Representation
-Each card is represented as a dynamically allocated `Card` structure containing:
-- Rank and suit
-- Visibility state
-
-### Linked Lists
-All card piles (deck, columns, foundation piles) are implemented using a **singly linked list** structure.
-Nodes are owned by their list; game logic performs pointer-level list manipulation where required.
-
-### Game State
-The game uses an explicit **finite-state model** with clearly defined transitions between phases.
-
----
-
-## Design Notes
-
-- No arrays are used for storing cards or piles.
-- All memory allocation and cleanup is explicit.
-- Node ownership and list invariants are carefully preserved.
-- Parsing, validation, and execution are strictly separated.
-
----
-
-## Limitations
-
-- Terminal UI only
-- No undo functionality
-- No win detection (yet)
-
----
-
-## Author
-
-Simon Toftemark  
-02322 Machine Oriented Programming  
-DTU (Technical University of Denmark)
-
----
-
-## License
-
-This project was developed for educational purposes as part of a university course.
+Simon Toftemark
