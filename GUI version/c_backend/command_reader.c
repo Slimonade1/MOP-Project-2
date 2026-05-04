@@ -52,19 +52,23 @@ GamePhase commandReaderStartup(
     if(strcmp(command, "LD") == 0) { 
         strcpy(lastCommand, "LD");
 
-        freeDeck(deckOfCards);
         linked_list_init(deckOfCards);
 
-        if (argument == NULL)
-            snprintf(path, sizeof(path), "%sstd_card_deck.txt", DATA_DIR);
-        else
-            snprintf(path, sizeof(path), "%s%s", DATA_DIR, argument);
+        if (argument == NULL)   snprintf(path, sizeof(path), "%sstd_card_deck.txt", DATA_DIR);
+        else                    snprintf(path, sizeof(path), "%s%s", DATA_DIR, argument);
 
-        int loaded = loadFile(deckOfCards, path);
-        if (loaded != NUM_CARDS) {
-            strcpy(statusMessage, "Failed to load deck");
-            freeDeck(deckOfCards);
-            return GAME_STARTUP;
+        // Load the deck into a temporary deck first to validate the file before modifying the active deck
+        LinkedList tempDeck;
+        linked_list_init(&tempDeck);
+
+        if(loadFile(&tempDeck, path) != 0) return GAME_STARTUP;
+
+        // Free any existing cards in the active deck before moving new cards in
+        freeDeck(deckOfCards);
+
+        // Move loaded cards to active deck
+        while (tempDeck.head) {
+            linked_list_push(deckOfCards, linked_list_pop_front(&tempDeck));
         }
 
         dealCards(deckOfCards, columns);

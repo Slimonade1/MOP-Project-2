@@ -91,5 +91,4 @@ draw_cards(canvas, current_state["columns"])
 # Write a welcome message to the user, prompting them to enter a command
 canvas.create_text(600, 300, text="Welcome to Yukon Solitaire!\nEnter commands below to play. \n (write LD to load deck)", font=("Arial", 18), fill="white", justify="center")
 
-
 root.mainloop()
