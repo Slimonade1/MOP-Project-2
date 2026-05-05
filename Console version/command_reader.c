@@ -30,9 +30,7 @@
 GamePhase commandReaderStartup(
     // TODO Could be more protective against calling not calling LD as first command, which would cause undefined behaviour in later commands
     LinkedList *deckOfCards,
-    LinkedList *columns,
-    char *statusMessage,
-    char *lastCommand) {
+    LinkedList *columns) {
 
     char input[100];
     fgets(input, sizeof(input), stdin);
@@ -286,15 +284,11 @@ void setupGame(LinkedList *deckOfCards, LinkedList *columns) {
  * 
  * @param columns Array of 7 LinkedList columns representing tableau columns.
  * @param foundationCells Array of 4 LinkedList foundation piles.
- * @param statusMessage Buffer to store status messages for the UI.
- * @param lastCommand Buffer to store the last command for display in the UI.
  * @return The next GamePhase, which is GAME_PLAY for normal execution or GAME_QUIT when quitting.
  */
 GamePhase commandReaderPlay(
     LinkedList *columns,
-    LinkedList *foundationCells,
-    char *statusMessage,
-    char *lastCommand) {
+    LinkedList *foundationCells) {
 
     char input[100];
     fgets(input, sizeof(input), stdin);

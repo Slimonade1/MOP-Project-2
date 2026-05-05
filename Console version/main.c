@@ -39,11 +39,11 @@ int main() {
 
         switch(phase) {
             case GAME_STARTUP:
-                phase = commandReaderStartup(&deckOfCards, columns, statusMessage, lastCommand);
+                phase = commandReaderStartup(&deckOfCards, columns);
                 break;
             
             case GAME_PLAY:
-                phase = commandReaderPlay(columns, finishCells, statusMessage, lastCommand);
+                phase = commandReaderPlay(columns, finishCells);
                 break;
             
             default:

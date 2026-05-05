@@ -15,9 +15,7 @@
 
 GamePhase commandReaderStartup(
     LinkedList *deckOfCards,
-    LinkedList *columns,
-    char *statusMessage,
-    char *lastCommand
+    LinkedList *columns
 );
 
 void showAllCards(LinkedList *deckOfCards);
@@ -30,9 +28,7 @@ void setupGame(LinkedList *deckOfCards, LinkedList *columns);
 
 GamePhase commandReaderPlay(
     LinkedList *columns,
-    LinkedList *foundationCells,
-    char *statusMessage,
-    char *lastCommand
+    LinkedList *foundationCells
 );
 
 typedef struct {
