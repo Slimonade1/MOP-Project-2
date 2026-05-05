@@ -14,15 +14,12 @@
 char statusMessage[50];
 char lastCommand[10];
 
-LinkedList columns[NUM_COLUMNS];
-LinkedList finishCells[4];
-
 // Prototypes
 
-void drawToTerminal(LinkedList* columns, LinkedList* finishCells);
+void drawToTerminal(LinkedList* columns, LinkedList* foundationCells);
 Card *get_card_at(LinkedList *list, int index);
 
-void initializeColumns(LinkedList* columns, LinkedList* finishCells);
+void initializeColumns(LinkedList* columns, LinkedList* foundationCells);
 
 int main() {
     GamePhase phase = GAME_STARTUP;
@@ -30,11 +27,11 @@ int main() {
     LinkedList deckOfCards;
     linked_list_init(&deckOfCards);
 
-    initializeColumns(columns, finishCells);
+    initializeColumns(columns, foundationCells);
     srand((unsigned)time(NULL)); // create new seed / randomize game
 
     while(phase != GAME_QUIT) {
-        drawToTerminal(columns, finishCells); // Empty grid start of game
+        drawToTerminal(columns, foundationCells); // Empty grid start of game
         strcpy(statusMessage, "OK");
 
         switch(phase) {
@@ -43,7 +40,7 @@ int main() {
                 break;
             
             case GAME_PLAY:
-                phase = commandReaderPlay(columns, finishCells);
+                phase = commandReaderPlay(columns, foundationCells);
                 break;
             
             default:
@@ -59,7 +56,7 @@ int main() {
 /**
  * Draws the GUI of the game to the console
  */
-void drawToTerminal(LinkedList *columns, LinkedList finishCells[4]) {
+void drawToTerminal(LinkedList *columns, LinkedList foundationCells[4]) {
     printf("C1\tC2\tC3\tC4\tC5\tC6\tC7\n\n");
 
     // Find tallest tableau column
@@ -86,7 +83,7 @@ void drawToTerminal(LinkedList *columns, LinkedList finishCells[4]) {
             int fIndex = row / 2;
 
             if (fIndex < 4) {
-                Card *tail = get_tail_card(&finishCells[fIndex]);
+                Card *tail = get_tail_card(&foundationCells[fIndex]);
                 char *display = (tail == NULL) ? "[]" : tail->data;
 
                 printf("\t%-2s  F%d", display, fIndex + 1);
@@ -137,17 +134,17 @@ void dealCards(LinkedList* deckOfCards, LinkedList* columns) {
 }
 
 /**
- * Initialises all columns and finish cells
+ * Initialises all columns and foundation cells
  */
-void initializeColumns(LinkedList* columns, LinkedList* finishCells) {
+void initializeColumns(LinkedList* columns, LinkedList* foundationCells) {
     // Initialize all columns
     for(int i = 0; i < NUM_COLUMNS; i++) {
         linked_list_init(&columns[i]);
     }
 
-    // Initialize finish cells with a blank card
+    // Initialize foundation cells with a blank card
     for(int i = 0; i < 4; i++) {
-        linked_list_init(&finishCells[i]);
+        linked_list_init(&foundationCells[i]);
     }
 }
 
