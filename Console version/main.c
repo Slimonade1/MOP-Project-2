@@ -14,6 +14,9 @@
 char statusMessage[50];
 char lastCommand[10];
 
+LinkedList columns[NUM_COLUMNS];
+LinkedList foundationCells[4];
+
 // Prototypes
 
 void drawToTerminal(LinkedList* columns, LinkedList* foundationCells);
