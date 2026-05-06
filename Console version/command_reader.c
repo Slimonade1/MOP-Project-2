@@ -251,9 +251,22 @@ int saveFile(LinkedList *deckOfCards, char *fileName){
  * After dealing, the columns contain 1, 6, 7, 8, 9, 10, and 11 cards respectively, counted from left to right.
  */
 void setupGame(LinkedList *deckOfCards, LinkedList *columns) {
+    // Save the original deck order before dealing so we can restore it if the player quits back to startup
+    LinkedList originalDeck;
+    linked_list_init(&originalDeck);
+    Node *current = deckOfCards->head;
+    while (current) {
+        linked_list_push(&originalDeck, current->data);
+        current = current->next;
+    }
+
     // Free current cards
     for(int i = 0; i < NUM_COLUMNS; i++){
         while(columns[i].head) linked_list_pop_tail(&columns[i]);
+    }
+
+    for(int i = 0; i < 4; i++){
+        while(foundationCells[i].head) linked_list_pop_tail(&foundationCells[i]);
     }
 
     int colHeight[NUM_COLUMNS] = { 1, 6, 7, 8, 9, 10, 11 };
@@ -269,6 +282,9 @@ void setupGame(LinkedList *deckOfCards, LinkedList *columns) {
             linked_list_push(&columns[col], card);
         }
     }
+
+    // Restore the original deck order for later use in startup phase if player quits back
+    *deckOfCards = originalDeck;
 }
 
 /**
@@ -300,8 +316,8 @@ GamePhase commandReaderPlay(
     strcpy(lastCommand, input);
 
     // Check for quit command
-    if (strcmp(input, "QQ") == 0) {
-        return GAME_QUIT;
+    if (strcmp(input, "Q") == 0) {
+        return GAME_STARTUP;
     }
 
     Move move;
