@@ -120,9 +120,8 @@ GamePhase commandReaderStartup(
     if(strcmp(command, "SD") == 0) {
         strcpy(lastCommand, "SD");
         if(argument == NULL){
-            strcpy(statusMessage, "Missing filename");
-            return GAME_STARTUP;
-        }
+            argument = "cards.txt"; // default file name if no argument provided
+        } 
 
         snprintf(path, sizeof(path), "%s%s", DATA_DIR, argument); // insert data directory
 
@@ -131,6 +130,8 @@ GamePhase commandReaderStartup(
             strcpy(statusMessage, "Failed to save deck");
             return GAME_STARTUP;
         }
+
+        return GAME_STARTUP;
     }
 
     if(strcmp(command, "QQ") == 0) {
