@@ -584,64 +584,17 @@ void columnToColumnMove(Move *move, LinkedList *src, LinkedList *dst){
  * Performs a column-to-foundation move by detaching the specified card (which must be the last card in the column) and moving it to the destination foundation.
  */
 void columnToFoundationMove(Move *move, LinkedList *src, LinkedList *dst){
-    Node *prev = NULL;
-    Node *cur  = src->head;
-
-    // Find the card to move (should be the last card in the column)
-    while (cur->next) {
-        prev = cur;
-        cur = cur->next;
-    }
-
-    // Set prev->next to NULL to detach the card from the column
-    if (prev)prev->next = NULL;
-    else src->head = NULL;
-
-    // changes current->next to NULL, but is unnecessary since this is the last card
-    // cur->next = NULL;
-
-    if (!dst->head)
-        // Move to empty foundation
-        dst->head = cur; 
-    else {
-        // Move on top of existing foundation card
-        Node *tail = dst->head;
-        while (tail->next) tail = tail->next;
-        tail->next = cur;
-    }
-
-    // Update size
-    src->size--;
-    dst->size++;
-
-    // Reveal previous card if all no cards below
-    if (prev) {
-        Card *prevCard = prev->data;
-        prevCard->shown = true;
-    }
+    void *card = linked_list_pop_tail(src);
+    linked_list_push(dst, card);
 }
 
 /**
  * Performs a foundation-to-column move by detaching the top card of the source foundation and moving it to the destination column.
  */
 void foundationToColumnMove(Move *move, LinkedList *src, LinkedList *dst){
-    // Only the top card of the source foundation may be moved, so we take from the tail
-    Node *node = src->head;
-
-    // If there's only one card, head becomes NULL. Otherwise, we need to find the second-to-last node
-    src->head = node->next;
-    node->next = NULL;
-
-    if (!dst->head)
-        dst->head = node;
-    else {
-        Node *t = dst->head;
-        while (t->next) t = t->next;
-        t->next = node;
-    }
-
-    src->size--;
-    dst->size++;
+    // Only the top card of the source foundation may be moved, so pop the card data
+    void *card = linked_list_pop_tail(src);
+    linked_list_push(dst, card);
 }
 
 void gameWon(LinkedList *foundationCells) {
