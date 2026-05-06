@@ -333,10 +333,10 @@ GamePhase commandReaderPlay(
 
     executeMove(&move, columns, foundationCells);
 
+    strcpy(statusMessage, "Move parsed successfully");
+
     // Check for win condition after the move
     gameWon(foundationCells);
-
-    strcpy(statusMessage, "Move parsed successfully");
     return GAME_PLAY;
 }
 
@@ -386,8 +386,12 @@ bool parseMove(char *input, Move *move) {
         }
         strcpy(move->card, cardStr);
     } else {
-        // No card specified: F4
-        move->card[0] = '\0';
+        // No card specified, find the bottom card of the source column/foundation
+        Card* tailCard = get_tail_card(move->sourceType == 'C' ? &columns[move->sourceIndex - 1] : &foundationCells[move->sourceIndex - 1]);
+        if (tailCard == NULL) {
+            return false;
+        }
+        strcpy(move->card, tailCard->data);
     }
 
     // Parse destination
@@ -453,8 +457,6 @@ bool validateMove(Move *move, LinkedList *columns, LinkedList *foundationCells){
         sourceCard = get_tail_card(&foundationCells[move->sourceIndex - 1]);
         if(sourceCard == NULL) return false; // Source foundation is empty
         
-        // For foundation moves, card is not specified
-        if (move->card[0] != '\0') return false;
         strcpy(move->card, sourceCard->data);
     }
 
