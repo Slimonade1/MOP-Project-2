@@ -27,7 +27,7 @@ int loadFile(LinkedList *deckOfCards, char* fileName){
     char buffer[256];
     int index = 0;
 
-    while (index < NUM_CARDS && fgets(buffer, sizeof(buffer), file) != NULL) {
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
         trim_newline(buffer);
         if (buffer[0] == '\0') {
             continue; // skip empty lines
