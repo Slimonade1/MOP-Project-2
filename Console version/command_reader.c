@@ -444,7 +444,10 @@ bool validateMove(Move *move, LinkedList *columns, LinkedList *foundationCells){
         bool found = false;
         while(current && !found) {
             Card* card = (Card*)current->data;
-            if(strcmp(card->data, move->card) == 0) found = true;
+            if(strcmp(card->data, move->card) == 0) {
+                found = true;
+                if(!card->shown) found = false;
+            }
             current = current->next;
         }
         if(!found) return false; // Card was not found
@@ -481,6 +484,7 @@ bool validateMove(Move *move, LinkedList *columns, LinkedList *foundationCells){
     // Check rank and suit based on move type
     int sourceRank = get_rank(move->card[0]);
     int destRank = get_rank(destination->data[0]);
+
     
     if (move->destType == 'C') {
         // Column-to-Column or Foundation-to-Column: source 1 lower, different suit
